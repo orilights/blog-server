@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  SECRET
+}
+
+model User {
+  uid          Int      @id @default(autoincrement()) @map("user_id")
+  name         String   @unique @map("username") @db.VarChar(12)
+  email        String   @unique @db.VarChar(64)
+  nickname     String   @db.VarChar(20)
+  passwordHash String   @map("password_hash") @db.VarChar(36)
+  sex          Sex
+  status       Int      @default(0) // 0->正常 2->封禁
+  role         Role     @default(USER) // 0->普通用户 999->超级管理员
+  avatar       String   @default("https://cravatar.cn/avatar/1762718020b76ef1d96d10c00761d2d0?size=100") @db.VarChar(200)
+  createdAt    DateTime @default(now()) @map("create_at")
+  loggedAt     DateTime @default(now()) @map("logged_at")
+
+  posts    Post[]
+  comments Comment[]
+}
+
+model Post {
+  pid          Int      @id @default(autoincrement()) @map("post_id")
+  title        String   @db.VarChar(30)
+  text         String   @db.MediumText
+  author       Int      @map("author_id")
+  publish      Boolean  @default(false)
+  like         Int      @default(0)
+  password     String?  @db.VarChar(40)
+  viewCount    Int      @default(0) @map("view_count")
+  allowComment Int      @default(1) @map("allow_comment") // 0->禁止评论 1->运行所有人评论 2->允许关注者评论
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [author], references: [uid])
+  comments  Comment[]
+  metadatas Metadata[]
+}
+
+model Comment {
+  cid       Int      @id @default(autoincrement()) @map("comment_id")
+  pid       Int
+  sender    Int
+  text      String   @db.VarChar(200)
+  ip        String   @db.VarChar(15)
+  agent     String   @db.VarChar(200)
+  replyTo   Int?     @map("replyTo")
+  like      Int      @default(0)
+  dislike   Int      @default(0)
+  status    Int      @default(0) // 0->正常 1->待审核 2->被屏蔽
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post @relation(fields: [pid], references: [pid])
+  user User @relation(fields: [sender], references: [uid])
+}
+
+model Metadata {
+  mid  Int    @id @default(autoincrement()) @map("meta_id")
+  pid  Int
+  type String
+  text String @db.VarChar(50)
+
+  post Post? @relation(fields: [pid], references: [pid])
+}
+
+model Option {
+  key   String @id
+  value String @db.VarChar(100)
+}
