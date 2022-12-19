@@ -5,6 +5,7 @@ import { NewCommentDto } from './dto/new.comment.dto';
 import { NewPostDto } from './dto/new.post.dto';
 import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
+import { SubmitLikeDto } from './dto/submit.like.dto';
 
 @Injectable()
 export class PostService {
@@ -164,7 +165,6 @@ export class PostService {
         text: true,
         replyTo: true,
         like: true,
-        dislike: true,
         createdAt: true,
         user: {
           select: {
@@ -208,5 +208,137 @@ export class PostService {
     return {
       comment,
     };
+  }
+
+  async submitLike(params: SubmitLikeDto) {
+    const { token, type, sid } = params;
+    const payload = await verifyToken(token);
+    if (payload.id == -1) {
+      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+    }
+    let sidExist;
+    if (type == 'POST') {
+      sidExist = await this.prisma.post.findUnique({
+        where: {
+          pid: sid,
+        },
+      });
+    } else if (type == 'COMMENT') {
+      sidExist = await this.prisma.comment.findUnique({
+        where: {
+          cid: sid,
+        },
+      });
+    } else {
+      throw new HttpException('invalid type', HttpStatus.BAD_REQUEST);
+    }
+    if (!sidExist) {
+      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+    }
+    const likeExist = await this.prisma.like.findFirst({
+      where: {
+        type,
+        sid,
+        uid: payload.id,
+      },
+    });
+    if (likeExist) {
+      throw new HttpException('已点赞过', HttpStatus.BAD_REQUEST);
+    }
+    const like = await this.prisma.like.create({
+      data: {
+        type,
+        sid,
+        uid: payload.id,
+      },
+    });
+    if (type == 'POST') {
+      await this.prisma.post.update({
+        where: {
+          pid: sid,
+        },
+        data: {
+          like: sidExist.like + 1,
+        },
+      });
+    }
+    if (type == 'COMMENT') {
+      await this.prisma.comment.update({
+        where: {
+          cid: sid,
+        },
+        data: {
+          like: sidExist.like + 1,
+        },
+      });
+    }
+    return { msg: 'success' };
+  }
+
+  async cancelLike(params: SubmitLikeDto) {
+    const { token, type, sid } = params;
+    // 校验 token
+    const payload = await verifyToken(token);
+    if (payload.id == -1) {
+      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+    }
+    // 校验点赞对象
+    let sidExist;
+    if (type == 'POST') {
+      sidExist = await this.prisma.post.findUnique({
+        where: {
+          pid: sid,
+        },
+      });
+    } else if (type == 'COMMENT') {
+      sidExist = await this.prisma.comment.findUnique({
+        where: {
+          cid: sid,
+        },
+      });
+    } else {
+      throw new HttpException('invalid type', HttpStatus.BAD_REQUEST);
+    }
+    if (!sidExist) {
+      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+    }
+    // 判断是否已点赞
+    const likeExist = await this.prisma.like.findFirst({
+      where: {
+        type,
+        sid,
+        uid: payload.id,
+      },
+    });
+    if (!likeExist) {
+      throw new HttpException('like not exist', HttpStatus.BAD_REQUEST);
+    }
+    // 取消点赞
+    await this.prisma.like.delete({
+      where: {
+        id: likeExist.id,
+      },
+    });
+    if (type == 'POST') {
+      await this.prisma.post.update({
+        where: {
+          pid: sid,
+        },
+        data: {
+          like: sidExist.like - 1,
+        },
+      });
+    }
+    if (type == 'COMMENT') {
+      await this.prisma.comment.update({
+        where: {
+          cid: sid,
+        },
+        data: {
+          like: sidExist.like - 1,
+        },
+      });
+    }
+    return { msg: 'success' };
   }
 }

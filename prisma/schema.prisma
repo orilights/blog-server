@@ -37,6 +37,7 @@ model User {
 
   posts    Post[]
   comments Comment[]
+  likes    Like[]
 }
 
 model Post {
@@ -66,7 +67,6 @@ model Comment {
   agent     String   @db.VarChar(200)
   replyTo   Int?     @map("replyTo")
   like      Int      @default(0)
-  dislike   Int      @default(0)
   status    Int      @default(0) // 0->正常 1->待审核 2->被屏蔽
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -86,4 +86,13 @@ model Metadata {
 model Option {
   key   String @id
   value String @db.VarChar(100)
+}
+
+model Like {
+  id   Int    @id @default(autoincrement())
+  type String // POST->文章 COMMENT>评论
+  sid  Int    @map("source_id")
+  uid  Int
+
+  user User @relation(fields: [uid], references: [uid])
 }

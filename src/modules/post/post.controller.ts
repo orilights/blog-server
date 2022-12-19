@@ -15,6 +15,7 @@ import { PostService } from './post.service';
 import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
 import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { SubmitLikeDto } from './dto/submit.like.dto';
 
 @ApiTags('博客系统')
 @Controller('post')
@@ -78,5 +79,23 @@ export class PostController {
   @Post('/newComment')
   newComment(@Body() params: NewCommentDto, @IpAddress() ipAddress) {
     return this.postService.newComment(params, ipAddress);
+  }
+
+  @Post('/submitLike')
+  submitLike(@Body() params: SubmitLikeDto) {
+    const { sid } = params;
+    if (sid === undefined || !isInt(Number(sid))) {
+      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+    }
+    return this.postService.submitLike(params);
+  }
+
+  @Post('/cancelLike')
+  cancelLike(@Body() params: SubmitLikeDto) {
+    const { sid } = params;
+    if (sid === undefined || !isInt(Number(sid))) {
+      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+    }
+    return this.postService.cancelLike(params);
   }
 }
