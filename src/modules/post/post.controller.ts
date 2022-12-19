@@ -6,6 +6,7 @@ import {
   Post,
   Get,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { isInt } from 'class-validator';
 import { IpAddress } from 'src/utils/request';
@@ -15,6 +16,7 @@ import { PostService } from './post.service';
 import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
 import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from 'src/shared/guard/auth.guard';
 
 @ApiTags('博客系统')
 @Controller('post')
@@ -22,6 +24,7 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get('/getList')
+  @UseGuards(AuthGuard)
   @ApiParam({ name: 'page', description: '页数', example: 1 })
   getList(@Query() params) {
     const { page } = params;
