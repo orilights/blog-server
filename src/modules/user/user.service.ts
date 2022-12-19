@@ -1,6 +1,7 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { ResultData } from 'src/type/result';
 import { passwordHash, verifyToken } from 'src/utils/verify';
 import { UserGetInfoDto } from './dto/getinfo.user.dto';
 import { UserLoginDto } from './dto/login.user.dto';
@@ -17,7 +18,7 @@ export class UserService {
       where: { name: username },
     });
     if (existUser) {
-      throw new HttpException(`用户名已使用`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '用户名已被使用');
     }
     const newUser = await this.prisma.user.create({
       data: {
@@ -28,7 +29,14 @@ export class UserService {
         sex,
       },
     });
-    return newUser;
+    return ResultData.ok({
+      uid: newUser.uid,
+      name: newUser.name,
+      nickname: newUser.nickname,
+      role: newUser.role,
+      sex: newUser.sex,
+      avatar: newUser.avatar,
+    });
   }
 
   async login(params: UserLoginDto) {
@@ -37,10 +45,10 @@ export class UserService {
       where: { name: username },
     });
     if (!existUser) {
-      throw new HttpException(`用户不存在`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '用户不存在');
     }
     if (existUser.passwordHash == passwordHash(password, username)) {
-      return {
+      return ResultData.ok({
         id: existUser.uid,
         token: this.jwtService.sign({
           id: existUser.uid,
@@ -49,9 +57,9 @@ export class UserService {
           role: existUser.role,
           sex: existUser.sex,
         }),
-      };
+      });
     } else {
-      throw new HttpException(`用户名或密码错误`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '用户名或密码错误');
     }
   }
 
@@ -59,14 +67,12 @@ export class UserService {
     const { uid, token } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-2, '无效Token');
     }
     if (payload.id != uid) {
-      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-2, '无效Token');
     }
-    return {
-      uid,
-    };
+    return ResultData.ok({ uid }, '验证成功');
   }
 
   async getInfo(params: UserGetInfoDto) {
@@ -81,6 +87,7 @@ export class UserService {
         nickname: true,
         sex: true,
         status: true,
+        role: true,
         avatar: true,
         posts: {
           select: {
@@ -101,9 +108,9 @@ export class UserService {
       },
     });
     if (userInfo) {
-      return userInfo;
+      return ResultData.ok({ userInfo });
     } else {
-      throw new HttpException(`该用户不存在`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '用户不存在');
     }
   }
 }

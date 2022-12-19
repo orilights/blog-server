@@ -13,7 +13,7 @@ async function main() {
       passwordHash: 'system',
       sex: 'SECRET',
       status: 2,
-      role: 'ADMIN',
+      role: 'SYSTEM',
     },
   });
 

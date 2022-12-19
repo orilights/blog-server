@@ -1,11 +1,12 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { verifyToken } from 'src/utils/verify';
 import { NewCommentDto } from './dto/new.comment.dto';
 import { NewPostDto } from './dto/new.post.dto';
 import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
-import { SubmitLikeDto } from './dto/submit.like.dto';
+import { LikeDto } from './dto/like.dto';
+import { ResultData } from 'src/type/result';
 
 @Injectable()
 export class PostService {
@@ -49,11 +50,11 @@ export class PostService {
       }
     });
 
-    return {
+    return ResultData.ok({
       page,
       count,
       posts,
-    };
+    });
   }
 
   async getPost(pid: number) {
@@ -72,16 +73,16 @@ export class PostService {
       },
     });
     if (!post) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '文章不存在');
     }
-    return { post };
+    return ResultData.ok({ post });
   }
 
   async newPost(params: NewPostDto) {
     const { token, title, text } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+      ResultData.fail(-2, '无效Token');
     }
     const post = await this.prisma.post.create({
       data: {
@@ -90,16 +91,14 @@ export class PostService {
         author: Number(payload.id),
       },
     });
-    return {
-      post,
-    };
+    return ResultData.ok({ post });
   }
 
   async editPost(params: EditPostDto) {
     const { token, pid, title, text } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException('invalid token', HttpStatus.BAD_REQUEST);
+      ResultData.fail(-2, '无效Token');
     }
     const postExist = await this.prisma.post.findUnique({
       where: {
@@ -107,13 +106,10 @@ export class PostService {
       },
     });
     if (!postExist) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '文章不存在');
     }
     if (postExist.author != Number(payload.id)) {
-      throw new HttpException(
-        'you have no permission to edit this article',
-        HttpStatus.BAD_REQUEST,
-      );
+      ResultData.fail(-2, '你没有权限编辑这篇文章');
     }
     const post = await this.prisma.post.update({
       where: {
@@ -124,14 +120,14 @@ export class PostService {
         text,
       },
     });
-    return { post };
+    return ResultData.ok({ post });
   }
 
   async deletePost(params: DeletePostDto) {
     const { token, pid } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException('invalid token', HttpStatus.BAD_REQUEST);
+      ResultData.fail(-2, '无效Token');
     }
     const postExist = await this.prisma.post.findUnique({
       where: {
@@ -139,20 +135,17 @@ export class PostService {
       },
     });
     if (!postExist) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '文章不存在');
     }
     if (postExist.author != Number(payload.id)) {
-      throw new HttpException(
-        'you have no permission to delete this article',
-        HttpStatus.BAD_REQUEST,
-      );
+      return ResultData.fail(-2, '你没有权限删除这篇文章');
     }
     const post = await this.prisma.post.delete({
       where: {
         pid: Number(pid),
       },
     });
-    return { post };
+    return ResultData.ok({ post });
   }
 
   async getComment(pid: number) {
@@ -178,14 +171,14 @@ export class PostService {
         createdAt: 'desc',
       },
     });
-    return { comments };
+    return ResultData.ok({ comments });
   }
 
   async newComment(params: NewCommentDto, ipAddress: string) {
     const { token, pid, text, agent } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+      ResultData.fail(-2, '无效Token');
     }
     const post = await this.prisma.post.findUnique({
       where: {
@@ -193,7 +186,7 @@ export class PostService {
       },
     });
     if (!post) {
-      throw new HttpException(`invalid pid`, HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '文章不存在');
     }
     const comment = await this.prisma.comment.create({
       data: {
@@ -205,16 +198,16 @@ export class PostService {
       },
     });
 
-    return {
+    return ResultData.ok({
       comment,
-    };
+    });
   }
 
-  async submitLike(params: SubmitLikeDto) {
+  async submitLike(params: LikeDto) {
     const { token, type, sid } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+      ResultData.fail(-2, '无效Token');
     }
     let sidExist;
     if (type == 'POST') {
@@ -230,10 +223,10 @@ export class PostService {
         },
       });
     } else {
-      throw new HttpException('invalid type', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效点赞类型');
     }
     if (!sidExist) {
-      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效sid');
     }
     const likeExist = await this.prisma.like.findFirst({
       where: {
@@ -243,7 +236,7 @@ export class PostService {
       },
     });
     if (likeExist) {
-      throw new HttpException('已点赞过', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '已点赞过');
     }
     const like = await this.prisma.like.create({
       data: {
@@ -272,15 +265,15 @@ export class PostService {
         },
       });
     }
-    return { msg: 'success' };
+    return ResultData.ok({ id: like.id });
   }
 
-  async cancelLike(params: SubmitLikeDto) {
+  async cancelLike(params: LikeDto) {
     const { token, type, sid } = params;
     // 校验 token
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      throw new HttpException(`invalid token`, HttpStatus.BAD_REQUEST);
+      ResultData.fail(-2, '无效Token');
     }
     // 校验点赞对象
     let sidExist;
@@ -297,10 +290,10 @@ export class PostService {
         },
       });
     } else {
-      throw new HttpException('invalid type', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效点赞类型');
     }
     if (!sidExist) {
-      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效sid');
     }
     // 判断是否已点赞
     const likeExist = await this.prisma.like.findFirst({
@@ -311,7 +304,7 @@ export class PostService {
       },
     });
     if (!likeExist) {
-      throw new HttpException('like not exist', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '点赞不存在');
     }
     // 取消点赞
     await this.prisma.like.delete({
@@ -339,6 +332,6 @@ export class PostService {
         },
       });
     }
-    return { msg: 'success' };
+    return ResultData.ok();
   }
 }

@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpException,
-  HttpStatus,
-  Post,
-  Get,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Post, Get, Query } from '@nestjs/common';
 import { isInt } from 'class-validator';
 import { IpAddress } from 'src/utils/request';
 import { NewCommentDto } from './dto/new.comment.dto';
@@ -15,7 +7,8 @@ import { PostService } from './post.service';
 import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
 import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { SubmitLikeDto } from './dto/submit.like.dto';
+import { LikeDto } from './dto/like.dto';
+import { ResultData } from 'src/type/result';
 
 @ApiTags('博客系统')
 @Controller('post')
@@ -38,7 +31,7 @@ export class PostController {
   getPost(@Query() params) {
     const { pid } = params;
     if (pid === undefined || !isInt(Number(pid))) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效pid');
     }
     return this.postService.getPost(Number(pid));
   }
@@ -52,7 +45,7 @@ export class PostController {
   editPost(@Body() params: EditPostDto) {
     const { pid } = params;
     if (pid === undefined || !isInt(Number(pid))) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效pid');
     }
     return this.postService.editPost(params);
   }
@@ -61,7 +54,7 @@ export class PostController {
   deletePost(@Body() params: DeletePostDto) {
     const { pid } = params;
     if (pid === undefined || !isInt(Number(pid))) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效pid');
     }
     return this.postService.deletePost(params);
   }
@@ -71,7 +64,7 @@ export class PostController {
   getComment(@Query() params) {
     const { pid } = params;
     if (pid === undefined || !isInt(Number(pid))) {
-      throw new HttpException('invalid pid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效pid');
     }
     return this.postService.getComment(Number(pid));
   }
@@ -82,19 +75,19 @@ export class PostController {
   }
 
   @Post('/submitLike')
-  submitLike(@Body() params: SubmitLikeDto) {
+  submitLike(@Body() params: LikeDto) {
     const { sid } = params;
     if (sid === undefined || !isInt(Number(sid))) {
-      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效sid');
     }
     return this.postService.submitLike(params);
   }
 
   @Post('/cancelLike')
-  cancelLike(@Body() params: SubmitLikeDto) {
+  cancelLike(@Body() params: LikeDto) {
     const { sid } = params;
     if (sid === undefined || !isInt(Number(sid))) {
-      throw new HttpException('invalid sid', HttpStatus.BAD_REQUEST);
+      return ResultData.fail(-1, '无效sid');
     }
     return this.postService.cancelLike(params);
   }
