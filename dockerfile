@@ -1,4 +1,4 @@
-FROM node:16-alpine
+FROM node:16
 COPY ./dist /app/dist
 COPY ./prisma /app/prisma
 COPY ./package.json /app/package.json

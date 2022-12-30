@@ -12,10 +12,71 @@ import { ResultData } from 'src/type/result';
 export class PostService {
   constructor(private prisma: PrismaService) {}
 
-  async getList(page = 1, pageSize = 20) {
+  async getPostList(page = 1, pageSize = 10) {
     const count = await this.prisma.post.count();
 
     const posts = await this.prisma.post.findMany({
+      skip: pageSize * (page - 1),
+      take: pageSize,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        pid: true,
+        title: true,
+        text: true,
+        like: true,
+        viewCount: true,
+        allowComment: true,
+        createdAt: true,
+        user: {
+          select: {
+            uid: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
+      },
+    });
+
+    posts.forEach((value) => {
+      if (value.text.length > 100) {
+        value.text = value.text.substring(0, 80) + '...';
+      }
+    });
+
+    return ResultData.ok({
+      page,
+      count,
+      posts,
+    });
+  }
+
+  async getUserPostList(uid, page = 1, pageSize = 10) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        uid: uid,
+      },
+    });
+    if (!user) {
+      return ResultData.fail(404, '用户不存在');
+    }
+    const count = (
+      await this.prisma.post.findMany({
+        where: {
+          author: user.uid,
+        },
+      })
+    ).length;
+    const posts = await this.prisma.post.findMany({
+      where: {
+        author: user.uid,
+      },
       skip: pageSize * (page - 1),
       take: pageSize,
       orderBy: {

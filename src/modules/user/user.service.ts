@@ -89,28 +89,12 @@ export class UserService {
         status: true,
         role: true,
         avatar: true,
-        posts: {
-          select: {
-            pid: true,
-            title: true,
-            text: true,
-            like: true,
-            viewCount: true,
-            allowComment: true,
-            createdAt: true,
-            _count: {
-              select: {
-                comments: true,
-              },
-            },
-          },
-        },
       },
     });
     if (userInfo) {
       return ResultData.ok({ userInfo });
     } else {
-      return ResultData.fail(-1, '用户不存在');
+      return ResultData.fail(404, '用户不存在');
     }
   }
 }

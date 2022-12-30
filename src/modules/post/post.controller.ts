@@ -6,7 +6,7 @@ import { NewPostDto } from './dto/new.post.dto';
 import { PostService } from './post.service';
 import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
-import { ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { LikeDto } from './dto/like.dto';
 import { ResultData } from 'src/type/result';
 
@@ -16,13 +16,17 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get('/getList')
-  @ApiParam({ name: 'page', description: '页数', example: 1 })
+  @ApiQuery({ name: 'uid', description: '用户ID', example: 1, required: false })
+  @ApiQuery({ name: 'page', description: '页数', example: 1 })
   getList(@Query() params) {
-    const { page } = params;
-    if (page === undefined || isNaN(page) || page < 1) {
-      return this.postService.getList();
+    const { page, uid } = params;
+    if (uid) {
+      return this.postService.getUserPostList(
+        Math.floor(Number(uid) || 0),
+        Math.floor(Number(page) || 1),
+      );
     } else {
-      return this.postService.getList(Math.floor(Number(page)));
+      return this.postService.getPostList(Math.floor(Number(page) || 1));
     }
   }
 
