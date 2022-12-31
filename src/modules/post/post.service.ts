@@ -236,7 +236,7 @@ export class PostService {
   }
 
   async newComment(params: NewCommentDto, ipAddress: string) {
-    const { token, pid, text, agent } = params;
+    const { token, pid, text, agent, replyTo } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
       ResultData.fail(-2, '无效Token');
@@ -256,6 +256,7 @@ export class PostService {
         text: text,
         ip: String(ipAddress),
         agent: agent,
+        replyTo: replyTo || null,
       },
     });
 
