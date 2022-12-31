@@ -213,6 +213,7 @@ export class PostService {
     const comments = await this.prisma.comment.findMany({
       where: {
         pid,
+        status: 0,
       },
       select: {
         cid: true,
