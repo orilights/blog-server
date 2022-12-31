@@ -196,7 +196,7 @@ export class PostService {
       },
     });
     if (!postExist) {
-      return ResultData.fail(-1, '文章不存在');
+      return ResultData.fail(404, '文章不存在');
     }
     if (postExist.author != Number(payload.id)) {
       return ResultData.fail(-2, '你没有权限删除这篇文章');
@@ -207,6 +207,26 @@ export class PostService {
       },
     });
     return ResultData.ok({ post });
+  }
+
+  async countPostView(pid: number) {
+    const post = await this.prisma.post.findUnique({
+      where: {
+        pid,
+      },
+    });
+    if (!post) {
+      return ResultData.fail(404, '文章不存在');
+    }
+    await this.prisma.post.update({
+      where: {
+        pid,
+      },
+      data: {
+        viewCount: post.viewCount + 1,
+      },
+    });
+    return ResultData.ok();
   }
 
   async getComment(pid: number) {
