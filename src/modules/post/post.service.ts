@@ -118,6 +118,46 @@ export class PostService {
     });
   }
 
+  async getHotPostList() {
+    const posts = await this.prisma.post.findMany({
+      take: 20,
+      orderBy: {
+        viewCount: 'desc',
+      },
+      select: {
+        pid: true,
+        title: true,
+        text: true,
+        like: true,
+        viewCount: true,
+        allowComment: true,
+        createdAt: true,
+        user: {
+          select: {
+            uid: true,
+            nickname: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+          },
+        },
+      },
+    });
+
+    posts.forEach((value) => {
+      if (value.text.length > 100) {
+        value.text = value.text.substring(0, 80) + '...';
+      }
+    });
+
+    return ResultData.ok({
+      posts,
+    });
+  }
+
   async getPost(pid: number) {
     const post = await this.prisma.post.findUnique({
       where: {

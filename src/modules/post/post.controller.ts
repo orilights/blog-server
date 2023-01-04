@@ -30,6 +30,11 @@ export class PostController {
     }
   }
 
+  @Get('/getHotList')
+  getHotList() {
+    return this.postService.getHotPostList();
+  }
+
   @Get('/getPost')
   @ApiQuery({ name: 'pid', description: '文章ID', example: 1 })
   getPost(@Query() params) {
