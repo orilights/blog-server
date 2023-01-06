@@ -183,7 +183,6 @@ export class PostService {
   async newPost(params: NewPostDto) {
     const { token, title, text } = params;
     const payload = await verifyToken(token);
-    console.log(payload);
     if (payload.id == -1) {
       return ResultData.fail(401, '无效Token');
     }

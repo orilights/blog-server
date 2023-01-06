@@ -47,6 +47,9 @@ export class UserService {
     if (!existUser) {
       return ResultData.fail(404, '用户不存在');
     }
+    if (existUser.status != 0) {
+      return ResultData.fail(401, '用户已被封禁');
+    }
     if (existUser.passwordHash == passwordHash(password, username)) {
       return ResultData.ok({
         id: existUser.uid,
