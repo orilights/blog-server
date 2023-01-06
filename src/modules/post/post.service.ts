@@ -183,8 +183,9 @@ export class PostService {
   async newPost(params: NewPostDto) {
     const { token, title, text } = params;
     const payload = await verifyToken(token);
+    console.log(payload);
     if (payload.id == -1) {
-      ResultData.fail(401, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     const post = await this.prisma.post.create({
       data: {
@@ -200,7 +201,7 @@ export class PostService {
     const { token, pid, title, text } = params;
     const payload: UserJwtPayload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(401, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     const postExist = await this.prisma.post.findUnique({
       where: {
@@ -211,7 +212,7 @@ export class PostService {
       return ResultData.fail(404, '文章不存在');
     }
     if (postExist.author != payload.id) {
-      ResultData.fail(403, '你没有权限编辑这篇文章');
+      return ResultData.fail(403, '你没有权限编辑这篇文章');
     }
     const post = await this.prisma.post.update({
       where: {
@@ -229,7 +230,7 @@ export class PostService {
     const { token, pid } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(401, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     const postExist = await this.prisma.post.findUnique({
       where: {
@@ -301,7 +302,7 @@ export class PostService {
     const { token, pid, text, agent, replyTo } = params;
     const payload: UserJwtPayload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(401, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     const post = await this.prisma.post.findUnique({
       where: {
@@ -337,7 +338,7 @@ export class PostService {
     const { token, type, sid } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(401, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     let sidExist;
     if (type == 'POST') {
@@ -403,7 +404,7 @@ export class PostService {
     // 校验 token
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(401, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     // 校验点赞对象
     let sidExist;
