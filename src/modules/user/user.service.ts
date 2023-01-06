@@ -18,7 +18,7 @@ export class UserService {
       where: { name: username },
     });
     if (existUser) {
-      return ResultData.fail(-1, '用户名已被使用');
+      return ResultData.fail(400, '用户名已被使用');
     }
     const newUser = await this.prisma.user.create({
       data: {
@@ -45,7 +45,7 @@ export class UserService {
       where: { name: username },
     });
     if (!existUser) {
-      return ResultData.fail(-1, '用户不存在');
+      return ResultData.fail(404, '用户不存在');
     }
     if (existUser.passwordHash == passwordHash(password, username)) {
       return ResultData.ok({
@@ -59,7 +59,7 @@ export class UserService {
         }),
       });
     } else {
-      return ResultData.fail(-1, '用户名或密码错误');
+      return ResultData.fail(400, '用户名或密码错误');
     }
   }
 
@@ -67,10 +67,10 @@ export class UserService {
     const { uid, token } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      return ResultData.fail(-2, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     if (payload.id != uid) {
-      return ResultData.fail(-2, '无效Token');
+      return ResultData.fail(401, '无效Token');
     }
     return ResultData.ok({ uid }, '验证成功');
   }

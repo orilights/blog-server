@@ -7,6 +7,7 @@ import { EditPostDto } from './dto/edit.post.dto';
 import { DeletePostDto } from './dto/delete.post.dto';
 import { LikeDto } from './dto/like.dto';
 import { ResultData } from 'src/type/result';
+import { UserJwtPayload } from 'src/type/interface';
 
 @Injectable()
 export class PostService {
@@ -174,7 +175,7 @@ export class PostService {
       },
     });
     if (!post) {
-      return ResultData.fail(-1, '文章不存在');
+      return ResultData.fail(404, '文章不存在');
     }
     return ResultData.ok({ post });
   }
@@ -183,7 +184,7 @@ export class PostService {
     const { token, title, text } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(-2, '无效Token');
+      ResultData.fail(401, '无效Token');
     }
     const post = await this.prisma.post.create({
       data: {
@@ -197,9 +198,9 @@ export class PostService {
 
   async editPost(params: EditPostDto) {
     const { token, pid, title, text } = params;
-    const payload = await verifyToken(token);
+    const payload: UserJwtPayload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(-2, '无效Token');
+      ResultData.fail(401, '无效Token');
     }
     const postExist = await this.prisma.post.findUnique({
       where: {
@@ -207,10 +208,10 @@ export class PostService {
       },
     });
     if (!postExist) {
-      return ResultData.fail(-1, '文章不存在');
+      return ResultData.fail(404, '文章不存在');
     }
-    if (postExist.author != Number(payload.id)) {
-      ResultData.fail(-2, '你没有权限编辑这篇文章');
+    if (postExist.author != payload.id) {
+      ResultData.fail(403, '你没有权限编辑这篇文章');
     }
     const post = await this.prisma.post.update({
       where: {
@@ -228,7 +229,7 @@ export class PostService {
     const { token, pid } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(-2, '无效Token');
+      ResultData.fail(401, '无效Token');
     }
     const postExist = await this.prisma.post.findUnique({
       where: {
@@ -239,7 +240,7 @@ export class PostService {
       return ResultData.fail(404, '文章不存在');
     }
     if (postExist.author != Number(payload.id)) {
-      return ResultData.fail(-2, '你没有权限删除这篇文章');
+      return ResultData.fail(403, '你没有权限删除这篇文章');
     }
     const post = await this.prisma.post.delete({
       where: {
@@ -298,9 +299,9 @@ export class PostService {
 
   async newComment(params: NewCommentDto, ipAddress: string) {
     const { token, pid, text, agent, replyTo } = params;
-    const payload = await verifyToken(token);
+    const payload: UserJwtPayload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(-2, '无效Token');
+      ResultData.fail(401, '无效Token');
     }
     const post = await this.prisma.post.findUnique({
       where: {
@@ -308,12 +309,18 @@ export class PostService {
       },
     });
     if (!post) {
-      return ResultData.fail(-1, '文章不存在');
+      return ResultData.fail(404, '文章不存在');
+    }
+    if (post.allowComment !== 1) {
+      // 禁止普通用户在关闭的评论区留言
+      if (payload.role === 'USER') {
+        return ResultData.fail(403, '评论区已关闭');
+      }
     }
     const comment = await this.prisma.comment.create({
       data: {
         pid: Number(pid),
-        sender: Number(payload.id),
+        sender: payload.id,
         text: text,
         ip: String(ipAddress),
         agent: agent,
@@ -330,7 +337,7 @@ export class PostService {
     const { token, type, sid } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(-2, '无效Token');
+      ResultData.fail(401, '无效Token');
     }
     let sidExist;
     if (type == 'POST') {
@@ -346,10 +353,10 @@ export class PostService {
         },
       });
     } else {
-      return ResultData.fail(-1, '无效点赞类型');
+      return ResultData.fail(400, '无效点赞类型');
     }
     if (!sidExist) {
-      return ResultData.fail(-1, '无效sid');
+      return ResultData.fail(400, '无效sid');
     }
     const likeExist = await this.prisma.like.findFirst({
       where: {
@@ -359,7 +366,7 @@ export class PostService {
       },
     });
     if (likeExist) {
-      return ResultData.fail(-1, '已点赞过');
+      return ResultData.fail(400, '已点赞过');
     }
     const like = await this.prisma.like.create({
       data: {
@@ -396,7 +403,7 @@ export class PostService {
     // 校验 token
     const payload = await verifyToken(token);
     if (payload.id == -1) {
-      ResultData.fail(-2, '无效Token');
+      ResultData.fail(401, '无效Token');
     }
     // 校验点赞对象
     let sidExist;
@@ -413,10 +420,10 @@ export class PostService {
         },
       });
     } else {
-      return ResultData.fail(-1, '无效点赞类型');
+      return ResultData.fail(400, '无效点赞类型');
     }
     if (!sidExist) {
-      return ResultData.fail(-1, '无效sid');
+      return ResultData.fail(400, '无效sid');
     }
     // 判断是否已点赞
     const likeExist = await this.prisma.like.findFirst({
@@ -427,7 +434,7 @@ export class PostService {
       },
     });
     if (!likeExist) {
-      return ResultData.fail(-1, '点赞不存在');
+      return ResultData.fail(400, '点赞不存在');
     }
     // 取消点赞
     await this.prisma.like.delete({
