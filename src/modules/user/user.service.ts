@@ -15,11 +15,17 @@ export class UserService {
 
   async register(params: UserRegisterDto) {
     const { username, nickname, password, email, sex } = params;
-    const existUser = await this.prisma.user.findUnique({
+    const usernameExist = await this.prisma.user.findUnique({
       where: { name: username },
     });
-    if (existUser) {
+    if (usernameExist) {
       return ResultData.fail(400, '用户名已被使用');
+    }
+    const emailExist = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (emailExist) {
+      return ResultData.fail(400, '邮箱已被使用');
     }
     const newUser = await this.prisma.user.create({
       data: {
@@ -103,7 +109,7 @@ export class UserService {
   }
 
   async edit(params: UserEditDto) {
-    const { token, nickname, password } = params;
+    const { token, nickname, password, avatar } = params;
     const payload = await verifyToken(token);
     if (payload.id == -1) {
       return ResultData.fail(401, '无效Token');
@@ -126,6 +132,16 @@ export class UserService {
           },
           data: {
             passwordHash: passwordHash(password, payload.name),
+          },
+        });
+      }
+      if (avatar && avatar !== '') {
+        await this.prisma.user.update({
+          where: {
+            uid: payload.id,
+          },
+          data: {
+            avatar,
           },
         });
       }
