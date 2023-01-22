@@ -67,13 +67,11 @@ export class PostService {
     if (!user) {
       return ResultData.fail(404, '用户不存在');
     }
-    const count = (
-      await this.prisma.post.findMany({
-        where: {
-          author: user.uid,
-        },
-      })
-    ).length;
+    const count = await this.prisma.post.count({
+      where: {
+        author: user.uid,
+      },
+    });
     const posts = await this.prisma.post.findMany({
       where: {
         author: user.uid,
@@ -177,6 +175,15 @@ export class PostService {
     if (!post) {
       return ResultData.fail(404, '文章不存在');
     }
+    await this.prisma.post.update({
+      where: {
+        pid,
+      },
+      data: {
+        viewCount: post.viewCount + 1,
+      },
+    });
+    post.viewCount += 1;
     return ResultData.ok({ post });
   }
 
@@ -242,32 +249,29 @@ export class PostService {
     if (postExist.author != Number(payload.id)) {
       return ResultData.fail(403, '你没有权限删除这篇文章');
     }
-    const post = await this.prisma.post.delete({
-      where: {
-        pid: Number(pid),
-      },
-    });
-    return ResultData.ok({ post });
-  }
-
-  async countPostView(pid: number) {
-    const post = await this.prisma.post.findUnique({
-      where: {
-        pid,
-      },
-    });
-    if (!post) {
-      return ResultData.fail(404, '文章不存在');
+    let post;
+    try {
+      await this.prisma.like.deleteMany({
+        where: {
+          type: 'POST',
+          sid: Number(pid),
+        },
+      });
+      await this.prisma.comment.deleteMany({
+        where: {
+          pid: Number(pid),
+        },
+      });
+      post = await this.prisma.post.delete({
+        where: {
+          pid: Number(pid),
+        },
+      });
+    } catch (err) {
+      return ResultData.fail(500, '服务器错误');
     }
-    await this.prisma.post.update({
-      where: {
-        pid,
-      },
-      data: {
-        viewCount: post.viewCount + 1,
-      },
-    });
-    return ResultData.ok();
+
+    return ResultData.ok({ post });
   }
 
   async getComment(pid: number) {

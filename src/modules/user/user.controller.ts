@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { UserEditDto } from './dto/edit.user.dto';
 import { UserGetInfoDto } from './dto/getinfo.user.dto';
 import { UserLoginDto } from './dto/login.user.dto';
 import { UserRegisterDto } from './dto/register.user.dto';
@@ -30,5 +31,10 @@ export class UserController {
   @ApiQuery({ name: 'uid', description: '用户ID', example: 1 })
   getInfo(@Query() params: UserGetInfoDto) {
     return this.userSevice.getInfo(params);
+  }
+
+  @Post('/edit')
+  edit(@Body() params: UserEditDto) {
+    return this.userSevice.edit(params);
   }
 }

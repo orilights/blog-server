@@ -31,7 +31,7 @@ model User {
   passwordHash String   @map("password_hash") @db.VarChar(36)
   sex          Sex
   status       Int      @default(0) // 0->正常 2->封禁
-  role         Role     @default(USER) // 0->普通用户 999->超级管理员
+  role         Role     @default(USER)
   avatar       String   @default("https://cravatar.cn/avatar/1762718020b76ef1d96d10c00761d2d0?size=100") @db.VarChar(200)
   createdAt    DateTime @default(now()) @map("create_at")
   loggedAt     DateTime @default(now()) @map("logged_at")
@@ -52,7 +52,7 @@ model Post {
   viewCount    Int      @default(0) @map("view_count")
   allowComment Int      @default(1) @map("allow_comment") // 0->禁止评论 1->运行所有人评论 2->允许关注者评论
   createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @default(now()) @map("updated_at")
 
   user      User       @relation(fields: [author], references: [uid])
   comments  Comment[]

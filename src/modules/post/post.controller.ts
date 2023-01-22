@@ -68,16 +68,6 @@ export class PostController {
     return this.postService.deletePost(params);
   }
 
-  @Get('/countPostView')
-  @ApiQuery({ name: 'pid', description: '文章ID', example: 1 })
-  countPostView(@Query() params) {
-    const { pid } = params;
-    if (pid === undefined || !isInt(Number(pid))) {
-      return ResultData.fail(-1, '无效pid');
-    }
-    return this.postService.countPostView(Number(pid));
-  }
-
   @Get('/getComment')
   @ApiQuery({ name: 'pid', description: '文章ID', example: 1 })
   getComment(@Query() params) {

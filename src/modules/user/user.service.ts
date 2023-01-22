@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ResultData } from 'src/type/result';
 import { passwordHash, verifyToken } from 'src/utils/verify';
+import { UserEditDto } from './dto/edit.user.dto';
 import { UserGetInfoDto } from './dto/getinfo.user.dto';
 import { UserLoginDto } from './dto/login.user.dto';
 import { UserRegisterDto } from './dto/register.user.dto';
@@ -75,7 +76,7 @@ export class UserService {
     if (payload.id != uid) {
       return ResultData.fail(401, '无效Token');
     }
-    return ResultData.ok({ uid }, '验证成功');
+    return ResultData.ok({ uid, role: payload.role }, '验证成功');
   }
 
   async getInfo(params: UserGetInfoDto) {
@@ -99,5 +100,52 @@ export class UserService {
     } else {
       return ResultData.fail(404, '用户不存在');
     }
+  }
+
+  async edit(params: UserEditDto) {
+    const { token, nickname, password } = params;
+    const payload = await verifyToken(token);
+    if (payload.id == -1) {
+      return ResultData.fail(401, '无效Token');
+    }
+    try {
+      if (nickname && nickname !== '') {
+        await this.prisma.user.update({
+          where: {
+            uid: payload.id,
+          },
+          data: {
+            nickname,
+          },
+        });
+      }
+      if (password && password !== '') {
+        await this.prisma.user.update({
+          where: {
+            uid: payload.id,
+          },
+          data: {
+            passwordHash: passwordHash(password, payload.name),
+          },
+        });
+      }
+    } catch (err) {
+      return ResultData.fail(500, '服务器错误');
+    }
+    const userInfo = await this.prisma.user.findUnique({
+      where: {
+        uid: payload.id,
+      },
+      select: {
+        uid: true,
+        name: true,
+        nickname: true,
+        sex: true,
+        status: true,
+        role: true,
+        avatar: true,
+      },
+    });
+    return ResultData.ok(userInfo, '更新成功');
   }
 }
