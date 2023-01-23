@@ -50,7 +50,7 @@ model Post {
   like         Int      @default(0)
   password     String?  @db.VarChar(40)
   viewCount    Int      @default(0) @map("view_count")
-  allowComment Int      @default(1) @map("allow_comment") // 0->禁止评论 1->运行所有人评论 2->允许关注者评论
+  allowComment Int      @default(1) @map("allow_comment") // 0->禁止普通用户评论 1->允许所有人评论
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @default(now()) @map("updated_at")
 

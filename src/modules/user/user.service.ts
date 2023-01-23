@@ -60,6 +60,7 @@ export class UserService {
     if (existUser.passwordHash == passwordHash(password, username)) {
       return ResultData.ok({
         id: existUser.uid,
+        role: existUser.role,
         token: this.jwtService.sign({
           id: existUser.uid,
           name: existUser.name,
