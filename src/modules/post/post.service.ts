@@ -44,12 +44,7 @@ export class PostService {
         },
       },
     });
-
-    posts.forEach((value) => {
-      if (value.text.length > 100) {
-        value.text = value.text.substring(0, 80) + '...';
-      }
-    });
+    posts.forEach(this.postPreviewCut);
 
     return ResultData.ok({
       page,
@@ -104,11 +99,7 @@ export class PostService {
       },
     });
 
-    posts.forEach((value) => {
-      if (value.text.length > 100) {
-        value.text = value.text.substring(0, 80) + '...';
-      }
-    });
+    posts.forEach(this.postPreviewCut);
 
     return ResultData.ok({
       page,
@@ -146,11 +137,7 @@ export class PostService {
       },
     });
 
-    posts.forEach((value) => {
-      if (value.text.length > 100) {
-        value.text = value.text.substring(0, 80) + '...';
-      }
-    });
+    posts.forEach(this.postPreviewCut);
 
     return ResultData.ok({
       posts,
@@ -467,5 +454,15 @@ export class PostService {
       });
     }
     return ResultData.ok();
+  }
+
+  postPreviewCut(value) {
+    if (value.text.length > 100) {
+      console.log('cut');
+      value.text =
+        value.text
+          .replace(/<video(([\s\S])*?)<\/video>|#/g, '')
+          .substring(0, 80) + '...';
+    }
   }
 }
