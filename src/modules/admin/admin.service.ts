@@ -15,8 +15,28 @@ export class AdminService {
     if (payload.role != 'ADMIN') {
       return ResultData.fail(403, '当前用户无权进行此操作');
     }
+    const userCount = await this.prisma.user.count();
+    const postCount = await this.prisma.post.count();
+    const commentCount = await this.prisma.comment.count();
 
-    return ResultData.ok();
+    const latestUser = await this.prisma.user.findFirst({
+      orderBy: {
+        uid: 'desc',
+      },
+      select: {
+        uid: true,
+        name: true,
+        nickname: true,
+        createdAt: true,
+      },
+    });
+
+    return ResultData.ok({
+      userCount,
+      postCount,
+      commentCount,
+      latestUser,
+    });
   }
 
   async getUserList(token: string, page = 1, pageSize = 10) {
