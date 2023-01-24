@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { AdminVerifyOnlyDto } from '../admin/dto/admin.dto';
 import { UserEditDto } from './dto/edit.user.dto';
 import { UserGetInfoDto } from './dto/getinfo.user.dto';
 import { UserLoginDto } from './dto/login.user.dto';
@@ -36,5 +37,10 @@ export class UserController {
   @Post('/edit')
   edit(@Body() params: UserEditDto) {
     return this.userSevice.edit(params);
+  }
+
+  @Post('/getImageUploadToken')
+  getImageUploadToken(@Body() params: AdminVerifyOnlyDto) {
+    return this.userSevice.getImageUploadToken(params.token);
   }
 }

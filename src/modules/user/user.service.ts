@@ -165,4 +165,14 @@ export class UserService {
     });
     return ResultData.ok(userInfo, '更新成功');
   }
+
+  async getImageUploadToken(token: string) {
+    const payload = await verifyToken(token);
+    if (payload.id == -1) {
+      return ResultData.fail(401, '无效Token');
+    }
+    return ResultData.ok({
+      token: process.env.LSKY_TOKEN,
+    });
+  }
 }

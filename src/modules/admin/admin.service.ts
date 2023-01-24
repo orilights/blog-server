@@ -83,6 +83,7 @@ export class AdminService {
   }
 
   async deleteUserById(token: string, uid: number) {
+    // 验证权限
     const payload = await verifyToken(token);
     if (payload.id == -1) {
       return ResultData.fail(401, '无效Token');
@@ -90,12 +91,22 @@ export class AdminService {
     if (payload.role != 'ADMIN') {
       return ResultData.fail(403, '当前用户无权进行此操作');
     }
+    // 校验请求
+    const userExist = await this.prisma.user.findUnique({
+      where: { uid },
+    });
+    if (!userExist) {
+      return ResultData.fail(404, '用户不存在');
+    }
+    if ((userExist.role = 'SYSTEM')) {
+      return ResultData.fail(403, '无法删除系统用户');
+    }
+    // 执行操作
     const anonymousUser = await this.prisma.user.findUnique({
       where: {
         name: 'anonymous',
       },
     });
-
     await this.prisma.post.updateMany({
       where: {
         author: uid,
@@ -104,7 +115,6 @@ export class AdminService {
         author: anonymousUser.uid,
       },
     });
-
     await this.prisma.comment.updateMany({
       where: {
         sender: uid,
@@ -113,14 +123,12 @@ export class AdminService {
         sender: anonymousUser.uid,
       },
     });
-
     await this.prisma.user.delete({
       where: {
         uid,
       },
     });
-
-    return ResultData.ok();
+    return ResultData.ok(null, '删除成功');
   }
 
   async banUserById(token: string, uid: number, reverse = false) {
