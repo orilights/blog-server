@@ -98,7 +98,7 @@ export class AdminService {
     if (!userExist) {
       return ResultData.fail(404, '用户不存在');
     }
-    if ((userExist.role = 'SYSTEM')) {
+    if (userExist.role == 'SYSTEM') {
       return ResultData.fail(403, '无法删除系统用户');
     }
     // 执行操作
